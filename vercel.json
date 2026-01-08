@@ -1,0 +1,16 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/n8n/:match*",
+            "destination": "https://esmagaygusuz4.app.n8n.cloud/:match*"
+        },
+        {
+            "source": "/api/zapier/:match*",
+            "destination": "https://hooks.zapier.com/:match*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}

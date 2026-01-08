@@ -7,9 +7,15 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/n8n': {
-        target: 'https://berat12345.app.n8n.cloud',
+        target: 'https://esmagaygusuz4.app.n8n.cloud',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/n8n/, ''),
+        secure: true,
+      },
+      '/api/zapier': {
+        target: 'https://hooks.zapier.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/zapier/, ''),
         secure: true,
       },
     },

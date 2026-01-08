@@ -1,9 +1,10 @@
 import { useState } from "react";
 
 // n8n webhook URL - development'ta proxy kullan, production'da direkt URL
-const N8N_WEBHOOK_URL = import.meta.env.DEV
-  ? "/api/n8n/webhook/generate-post"  // Vite proxy üzerinden
-  : "https://berat12345.app.n8n.cloud/webhook/generate-post";  // Production'da direkt
+const N8N_WEBHOOK_URL = "/api/n8n/webhook-test/generate-post";
+
+// Zapier webhook URL for publishing
+const ZAPIER_PUBLISH_WEBHOOK_URL = "/api/zapier/hooks/catch/25934798/uwktqr0/";
 
 export function SocialPostGenerator() {
   const [channel, setChannel] = useState("Twitter");
@@ -136,12 +137,50 @@ export function SocialPostGenerator() {
       // Hashtags'i al
       const responseHashtags = data.hashtags || "";
 
-      // Image'i al (base64 data URL formatında olabilir)
+      // Image'i al (base64 data URL formatında olabilir veya Fal.ai URL'i)
       let responseImage = data.image || null;
 
-      // Handle base64 image in 'data' field
+      // Recursive helper to find image URL (like Fal.ai structure or deeply nested URLs)
+      const findImageRecursively = (obj) => {
+        if (!obj) return null;
+
+        // Check for direct Fal.ai style structure: { images: [{ url: "..." }] }
+        if (obj.images && Array.isArray(obj.images) && obj.images[0]?.url) {
+          return obj.images[0].url;
+        }
+
+        // Check for direct url property if it looks like an image
+        if (obj.url && typeof obj.url === 'string' && (obj.url.startsWith('http') || obj.url.startsWith('data:image'))) {
+          // Simple check, might need to be more specific if other URLs exist
+          return obj.url;
+        }
+
+        // Check for 'image' property
+        if (obj.image && typeof obj.image === 'string') {
+          return obj.image;
+        }
+
+        if (Array.isArray(obj)) {
+          for (const item of obj) {
+            const result = findImageRecursively(item);
+            if (result) return result;
+          }
+        } else if (typeof obj === 'object') {
+          for (const key in obj) {
+            const result = findImageRecursively(obj[key]);
+            if (result) return result;
+          }
+        }
+        return null;
+      };
+
       if (!responseImage) {
-        const base64Data = data.data || (Array.isArray(data) && data[0]?.data);
+        responseImage = findImageRecursively(data);
+      }
+
+      // Handle base64 image in 'data' field (Fallback)
+      if (!responseImage) {
+        const base64Data = data.data || (Array.isArray(data) && data.find(item => item.data)?.data);
         if (base64Data) {
           responseImage = base64Data.startsWith('data:')
             ? base64Data
@@ -173,6 +212,48 @@ export function SocialPostGenerator() {
       setError(err.message || "Failed to generate post. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const [isPosting, setIsPosting] = useState(false);
+
+  const handlePost = async () => {
+    if (!generatedContent) return;
+
+    setIsPosting(true);
+    setError("");
+
+    const requestBody = {
+      platform: channel, // Zapier expects 'platform'
+      content: generatedContent,
+      image: imageUrl,
+    };
+
+    console.log("Sending publish request to:", ZAPIER_PUBLISH_WEBHOOK_URL);
+
+    try {
+      const response = await fetch(ZAPIER_PUBLISH_WEBHOOK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const responseText = await response.text();
+      console.log("Publish response:", responseText);
+
+      if (!response.ok) {
+        throw new Error(`Failed to publish: ${responseText}`);
+      }
+
+      alert(`Successfully posted to ${channel}!`);
+    } catch (err) {
+      console.error("Error publishing post:", err);
+      // Don't clear the generated content on error
+      alert(`Error publishing: ${err.message}`);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -310,8 +391,29 @@ export function SocialPostGenerator() {
               </div>
             )}
           </div>
+
+          {/* Post Button */}
+          {generatedContent && (
+            <div className="d-grid mt-4">
+              <button
+                className="btn btn-success py-2 fw-semibold"
+                type="button"
+                onClick={handlePost}
+                disabled={isPosting}
+              >
+                {isPosting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Posting to {channel}...
+                  </>
+                ) : (
+                  `Post to ${channel}`
+                )}
+              </button>
+            </div>
+          )}
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
