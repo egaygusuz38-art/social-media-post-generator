@@ -4,7 +4,7 @@ import { useState } from "react";
 const N8N_WEBHOOK_URL = "/api/n8n/webhook-test/generate-post";
 
 // Zapier webhook URL for publishing
-const ZAPIER_PUBLISH_WEBHOOK_URL = "/api/zapier/hooks/catch/25934798/uwktqr0/";
+const ZAPIER_PUBLISH_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/25934798/uwktqr0/";
 
 export function SocialPostGenerator() {
   const [channel, setChannel] = useState("Twitter");
