@@ -2,7 +2,7 @@ import { useState } from "react";
 
 // n8n webhook URL - development'ta proxy kullan, production'da direkt URL
 const N8N_WEBHOOK_URL = import.meta.env.PROD
-  ? "/api/n8n/webhook/generate-post" // Production link
+  ? "https://esmagaygusuz4.app.n8n.cloud/webhook/generate-post" // Production link (Direct)
   : "/api/n8n/webhook-test/generate-post"; // Test link (development)
 
 // Zapier webhook URL for publishing
