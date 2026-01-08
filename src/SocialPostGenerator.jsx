@@ -1,7 +1,9 @@
 import { useState } from "react";
 
 // n8n webhook URL - development'ta proxy kullan, production'da direkt URL
-const N8N_WEBHOOK_URL = "/api/n8n/webhook-test/generate-post";
+const N8N_WEBHOOK_URL = import.meta.env.PROD
+  ? "/api/n8n/webhook/generate-post" // Production link
+  : "/api/n8n/webhook-test/generate-post"; // Test link (development)
 
 // Zapier webhook URL for publishing
 const ZAPIER_PUBLISH_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/25934798/uwktqr0/";
@@ -220,16 +222,31 @@ export function SocialPostGenerator() {
   const handlePost = async () => {
     if (!generatedContent) return;
 
+    // LinkedIn için Zapier Interface'i kullan
+    if (channel === "LinkedIn") {
+      const interfaceUrl = "https://new-form-project-1aa779.zapier.app/button";
+
+      // Parametreleri ekle (Zapier Interface'te alan adlarının eşleşmesi gerekir)
+      const params = new URLSearchParams({
+        post_text: generatedContent,
+        image_url: imageUrl || ""
+      });
+
+      const finalUrl = `${interfaceUrl}?${params.toString()}`;
+      console.log("Opening Zapier Interface URL:", finalUrl);
+      window.open(finalUrl, "_blank");
+      return;
+    }
+
+    // Diğer kanallar için mevcut API akışını koru (Zapier Webhook)
     setIsPosting(true);
     setError("");
 
     const requestBody = {
-      platform: channel, // Zapier expects 'platform'
+      platform: channel,
       content: generatedContent,
       image: imageUrl,
     };
-
-    console.log("Sending publish request to:", ZAPIER_PUBLISH_WEBHOOK_URL);
 
     try {
       const response = await fetch(ZAPIER_PUBLISH_WEBHOOK_URL, {
@@ -240,17 +257,14 @@ export function SocialPostGenerator() {
         body: JSON.stringify(requestBody),
       });
 
-      const responseText = await response.text();
-      console.log("Publish response:", responseText);
-
       if (!response.ok) {
+        const responseText = await response.text();
         throw new Error(`Failed to publish: ${responseText}`);
       }
 
-      alert(`Successfully posted to ${channel}!`);
+      alert(`Successfully sent to Zapier for ${channel}!`);
     } catch (err) {
       console.error("Error publishing post:", err);
-      // Don't clear the generated content on error
       alert(`Error publishing: ${err.message}`);
     } finally {
       setIsPosting(false);
