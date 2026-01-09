@@ -1,9 +1,8 @@
 import { useState } from "react";
 
 // n8n webhook URL - development'ta proxy kullan, production'da direkt URL
-const N8N_WEBHOOK_URL = import.meta.env.PROD
-  ? "https://esmagaygusuz4.app.n8n.cloud/webhook/generate-post" // Production link (Direct)
-  : "/api/n8n/webhook-test/generate-post"; // Test link (development)
+// Debug: Always use production URL to see if Vercel actually updates
+const N8N_WEBHOOK_URL = "https://esmagaygusuz4.app.n8n.cloud/webhook/generate-post";
 
 // Zapier webhook URL for publishing
 const ZAPIER_PUBLISH_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/25934798/uwktqr0/";
